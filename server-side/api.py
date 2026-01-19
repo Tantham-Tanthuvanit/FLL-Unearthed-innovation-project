@@ -17,6 +17,8 @@ app = FastAPI()
 
 valid_keys = DataHandler("keys.json")
 
+current_data = {}
+
 @app.get("/")
 def root():
     # test to check if its actually working
@@ -37,5 +39,9 @@ def check_nfc(tag: NFCTag):
 
 @app.post("/update-telemetry")
 def update_telemetry(data: dict):
-    # do nothing for now, just show the data
+    # save data to seperate variable to be used later on
+    current_data = data
     return data
+
+def get_telemetry_data():
+    return current_data
