@@ -87,12 +87,7 @@ while True:
                     )
 
                     # print out states
-                    print(f"""{TextColor.YELLOW}
-███████╗ █████╗ ███╗   ██╗
-██╔════╝██╔══██╗████╗  ██║
-█████╗  ███████║██╔██╗ ██║
-██╔══╝  ██╔══██║██║╚██╗██║
-██╔══╝  ██╔══██║██║╚██╗██║   :   {TextColor.RESET} {fan_state1}""")
+                    print(f"{TextColor.YELLOW}Fan1   :   {TextColor.RESET} {fan_state1}")
                     print(f"{TextColor.YELLOW}Fan2   :   {TextColor.RESET} {fan_state2}")
 
                 except Exception as e:
