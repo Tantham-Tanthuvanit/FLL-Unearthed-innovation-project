@@ -61,9 +61,9 @@ while True:
 
     forward()
 
-    if read_temp() > TARGET_TEMP:
-        fan_on()
-    else:
-        fan_off()
+    #if read_temp() > TARGET_TEMP:
+    #    fan_on()
+    #else:
+    #    fan_off()
 
     time.sleep(2)
