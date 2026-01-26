@@ -60,6 +60,10 @@ def send_data(data: Data):
 
     return data
 
+@app.get("/get-data")
+def get_data():
+    return app.state.current_data
+
 @app.post("/update-telemetry")
 def update_telemetry(data: Telemetry):
     # save data to seperate variable to be used later on
@@ -70,4 +74,4 @@ def update_telemetry(data: Telemetry):
 
 @app.get("/get-telemetry")
 def get_telemetry_data():
-    return app.state.current_data
+    return app.state.current_telemetry
