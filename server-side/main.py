@@ -71,15 +71,31 @@ selected_row = 0
 
 spin_counter = 0
 
+typing_lock = True
+
 menue_options = [
     "dashboard",
     "add data"
 ]
 
+ans = ["","","","","",""]
+data = [
+    "name",
+    "id",
+    "dig location",
+    "date found",
+    "temperature",
+    "humidity"
+]
+selected_data = 0
+
 #spin_anim = ["", "", "", "", "", ""]
 spin_anim = ["◐", "◓", "◑", "◒"]
 #spin_anim = ["|", "/", "—", "\\"]
 
+BACKSPACE = ("\x08", "\x7f", "\b")
+
+label_width = max(len(label) for label in data)
 
 while True:
     # draw UI
@@ -106,13 +122,28 @@ while True:
                     )
 
                     tempreture = (
-                        f"{TextColor.GREEN}{telemetry['temperature']}°C{TextColor.RESET}" if 'temperature' in telemetry else f"{TextColor.RED}ERROR{TextColor.RESET}"
+                       f"{TextColor.GREEN}{telemetry["temperature"]}°C{TextColor.RESET}" if "temperature" in telemetry else f"{TextColor.RED}ERROR{TextColor.RESET}"
+                    )
+
+                    humidity =  (
+                        f"{TextColor.GREEN}{telemetry["humidity"]}%{TextColor.RESET}" if "humidity" in telemetry else f"{TextColor.RED}ERROR{TextColor.RESET}"
+                    )
+
+                    motor1 = (
+                        f"{TextColor.GREEN}running{TextColor.RESET}" if telemetry["motor1"] else f"{TextColor.RED}stopped{TextColor.RESET}"
+                    )
+
+                    motor2 = (
+                        f"{TextColor.GREEN}running{TextColor.RESET}" if telemetry["motor2"] else f"{TextColor.RED}stopped{TextColor.RESET}"
                     )
 
                     # print out states
-                    print(f"{TextColor.YELLOW}Fan1   :   {TextColor.RESET} {fan_state1}")
-                    print(f"{TextColor.YELLOW}Fan2   :   {TextColor.RESET} {fan_state2}")
-                    print(f"{TextColor.YELLOW}Temp   :   {TextColor.RESET} {tempreture}")
+                    print(f"{TextColor.YELLOW}Fan1   :   {fan_state1}")
+                    print(f"{TextColor.YELLOW}Fan2   :   {fan_state2}")
+                    print(f"{TextColor.YELLOW}Temp   :   {tempreture}")
+                    print(f"{TextColor.YELLOW}Humi   :   {humidity}")
+                    print(f"{TextColor.YELLOW}Mot1   :   {motor1}")
+                    print(f"{TextColor.YELLOW}Mot2   :   {motor2}")
 
                 except Exception as e:
                     print(f"Error : {e}")
@@ -120,43 +151,98 @@ while True:
             else:
                 print("Error:", response.status_code)
 
-    print("\n\n\n\n[Q]uit       [B]ack")
+        case 2:
+
+
+            for i in range(len(data)):
+
+                buf = (
+                    f"{TextColor.GREEN}>" if i == selected_data else f"{TextColor.GREEN} "
+                )
+                
+                label = f"{TextColor.YELLOW}{data[i]:<{label_width}}{TextColor.RESET}" if i == selected_data else f"{data[i]:<{label_width}}"
+                print(f"{buf}{label}  :   {ans[i]}")
+
+
+
+
+    if tab == 2:
+        print(f"\n\n\n\n{TextColor.RESET}[Q]uit       [B]ack       [P]ush")
+    else:
+        print(f"\n\n\n\n{TextColor.RESET}[Q]uit       [B]ack")
         
 
     ch = get_key(1)
 
-    match ch:
-        # ctrl + c
-        case "q":
-            print("break")
-            clear_screen()
-            break
+    if typing_lock and tab == 2 and ch:
+        if ch == " ":
+            typing_lock = not typing_lock
+
+        elif ch in BACKSPACE:
+            ans[selected_data] = ans[selected_data][:-1]
+
+        elif ch.isprintable():
+            ans[selected_data] += ch
+    else:
+        match ch:
+            # ctrl + c
+            case "q":
+                print("break")
+                clear_screen()
+                break
+                
+            case "s":
+                if tab == 2 and not typing_lock:
+                    selected_data = (selected_data +1) % len(ans)
+
+                else:
+                    selected_row = (selected_row + 1)%len(menue_options)
+
+            case "w":
+                if tab == 2 and not typing_lock:
+                    selected_data -= 1
+
+                    if selected_data < 0:
+                        selected_data = len(ans)-1
+                else:
+                    selected_row = (selected_row - 1)
+
+                    if selected_row < 0:
+                        selected_row = len(menue_options)-1
+
+            case "p":
+                if tab == 2 and not typing_lock:
+                    payload = {
+                        "name": ans[0],
+                        "id": ans[1],
+                        "dig_location": ans[2],
+                        "date_found": ans[3],
+                        "temperature": int(ans[4]),
+                        "humidity": int(ans[5])
+                    }
+
+                    response  = requests.post("http://localhost:8000/send-data", json=payload)
+
+            case "b":
+                tab = 0
+
+            case " ":
+
+                if tab == 2:
+                    typing_lock = not typing_lock
+                else:
+                    match selected_row:
+                        case 0:
+                            tab = 1
+                        case 1:
+                            tab = 2
             
-        case "s":
-            selected_row = (selected_row + 1)%len(menue_options)
+            case None:
 
-        case "w":
-            selected_row = (selected_row - 1)
+                spin_counter = (spin_counter + 1) % len(spin_anim)
 
-            if selected_row < 0:
-                selected_row = len(menue_options)-1
-
-        case "b":
-            tab = 0
-
-        case " ":
-            match selected_row:
-                case 0:
-                    tab = 1
-                case 1:
-                    tab = 2
-        
-        case None:
-
-            spin_counter = (spin_counter + 1) % len(spin_anim)
-
-            clear_screen()
-            continue
+                clear_screen()
+                continue
 
     
 

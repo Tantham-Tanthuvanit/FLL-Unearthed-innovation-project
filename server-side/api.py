@@ -17,12 +17,24 @@ app = FastAPI()
 
 valid_keys = DataHandler("keys.json")
 
+app.state.current_telemetry = {}
 app.state.current_data = {}
 
 class Telemetry(BaseModel):
     fan1: bool
     fan2: bool
     temperature: float
+    humidity: float
+    motor1: bool
+    motor2: bool
+
+class Data(BaseModel):
+    name: str
+    id: str
+    dig_location: str
+    date_found: str
+    temperature: int
+    humidity: int
 
 @app.get("/")
 def root():
@@ -42,10 +54,16 @@ def check_nfc(tag: NFCTag):
     
     return {"permission": "denied"}
 
+@app.post("/send-data")
+def send_data(data: Data):
+    app.state.current_data = data.model_dump()
+
+    return data
+
 @app.post("/update-telemetry")
 def update_telemetry(data: Telemetry):
     # save data to seperate variable to be used later on
-    app.state.current_data = data.model_dump()
+    app.state.current_telemetry = data.model_dump()
 
 
     return data
