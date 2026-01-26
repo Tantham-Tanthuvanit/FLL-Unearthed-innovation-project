@@ -1,8 +1,9 @@
 import os
 import sys
 import requests
+import select
 
-from time import sleep
+from time import sleep, time
 from api import get_telemetry_data
 
 get_telemetry = "http://127.0.0.1:8000/get-telemetry"
@@ -18,12 +19,19 @@ if os.name == "nt":
     import msvcrt
     os.system("cls")
 
-    def get_key():
-        ch = msvcrt.getch()
-        try:
-            return ch.decode()
-        except UnicodeDecodeError:
-            return ""
+    def get_key(timeout=2.0):
+        start = time()
+
+        while time() - start < timeout:
+            if msvcrt.kbhit():
+                ch = msvcrt.getch()
+                try:
+                    return ch.decode()
+                except UnicodeDecodeError:
+                    return ""
+            sleep(0.01)
+
+        return None  # no key pressed in timeout
         
     def clear_screen():
 
@@ -47,8 +55,12 @@ else:
 
     atexit.register(restore)
 
-    def get_key():
-        return sys.stdin.read(1)
+    def get_key(timeout=2.0):
+        rlist, _, _ = select.select([sys.stdin], [], [], timeout)
+        if rlist:
+            return sys.stdin.read(1)
+        return None
+
 
     def clear_screen():
 
@@ -57,10 +69,17 @@ else:
 tab = 0
 selected_row = 0
 
+spin_counter = 0
+
 menue_options = [
     "dashboard",
     "add data"
 ]
+
+#spin_anim = ["", "", "", "", "", ""]
+spin_anim = ["◐", "◓", "◑", "◒"]
+#spin_anim = ["|", "/", "—", "\\"]
+
 
 while True:
     # draw UI
@@ -79,16 +98,21 @@ while True:
                 try:
 
                     fan_state1 = (
-                        f"{TextColor.GREEN}spinning{TextColor.RESET}" if telemetry["fan1"] else f"{TextColor.RED}not spinning{TextColor.RESET}"
+                        f"{TextColor.GREEN}{spin_anim[spin_counter]}{TextColor.RESET}" if telemetry["fan1"] else f"{TextColor.RED}󱑬{TextColor.RESET}"
                     )
 
                     fan_state2 = (
-                        f"{TextColor.GREEN}spinning{TextColor.RESET}" if telemetry["fan2"] else f"{TextColor.RED}not spinning{TextColor.RESET}"
+                        f"{TextColor.GREEN}{spin_anim[spin_counter]}{TextColor.RESET}" if telemetry["fan2"] else f"{TextColor.RED}󱑬{TextColor.RESET}"
+                    )
+
+                    tempreture = (
+                        f"{TextColor.GREEN}{telemetry['temperature']}°C{TextColor.RESET}" if 'temperature' in telemetry else f"{TextColor.RED}ERROR{TextColor.RESET}"
                     )
 
                     # print out states
                     print(f"{TextColor.YELLOW}Fan1   :   {TextColor.RESET} {fan_state1}")
                     print(f"{TextColor.YELLOW}Fan2   :   {TextColor.RESET} {fan_state2}")
+                    print(f"{TextColor.YELLOW}Temp   :   {TextColor.RESET} {tempreture}")
 
                 except Exception as e:
                     print(f"Error : {e}")
@@ -99,7 +123,7 @@ while True:
     print("\n\n\n\n[Q]uit       [B]ack")
         
 
-    ch = get_key()
+    ch = get_key(1)
 
     match ch:
         # ctrl + c
@@ -126,6 +150,14 @@ while True:
                     tab = 1
                 case 1:
                     tab = 2
+        
+        case None:
 
+            spin_counter = (spin_counter + 1) % len(spin_anim)
+
+            clear_screen()
+            continue
+
+    
 
     clear_screen()            

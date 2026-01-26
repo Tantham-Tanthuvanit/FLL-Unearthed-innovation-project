@@ -22,6 +22,7 @@ app.state.current_data = {}
 class Telemetry(BaseModel):
     fan1: bool
     fan2: bool
+    temperature: float
 
 @app.get("/")
 def root():
