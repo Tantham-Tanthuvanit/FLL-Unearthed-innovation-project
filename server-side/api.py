@@ -1,4 +1,4 @@
-# uvicorn api:app --host 0.0.0.0 --port 8000
+# uvicorn api:app --host 0.0.0.0 --port 8000 --reload
 
 from fastapi import FastAPI
 from datastore import DataHandler
@@ -17,7 +17,24 @@ app = FastAPI()
 
 valid_keys = DataHandler("keys.json")
 
-current_data = {}
+app.state.current_telemetry = {}
+app.state.current_data = {}
+
+class Telemetry(BaseModel):
+    fan1: bool
+    fan2: bool
+    temperature: float
+    humidity: float
+    motor1: bool
+    motor2: bool
+
+class Data(BaseModel):
+    name: str
+    id: str
+    dig_location: str
+    date_found: str
+    temperature: int
+    humidity: int
 
 @app.get("/")
 def root():
@@ -37,11 +54,24 @@ def check_nfc(tag: NFCTag):
     
     return {"permission": "denied"}
 
-@app.post("/update-telemetry")
-def update_telemetry(data: dict):
-    # save data to seperate variable to be used later on
-    current_data = data
+@app.post("/send-data")
+def send_data(data: Data):
+    app.state.current_data = data.model_dump()
+
     return data
 
+@app.get("/get-data")
+def get_data():
+    return app.state.current_data
+
+@app.post("/update-telemetry")
+def update_telemetry(data: Telemetry):
+    # save data to seperate variable to be used later on
+    app.state.current_telemetry = data.model_dump()
+
+
+    return data
+
+@app.get("/get-telemetry")
 def get_telemetry_data():
-    return current_data
+    return app.state.current_telemetry
