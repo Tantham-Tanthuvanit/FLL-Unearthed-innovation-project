@@ -4,6 +4,8 @@ import time
 import network
 import urequests
 
+"""
+
 SSID = ""
 PASSWORD = ""
 
@@ -17,11 +19,16 @@ while not wlan.isconnected():
 
 print("Connected:", wlan.ifconfig())
 
+"""
+
 FAN_PIN = 14
 TEMP_PIN = 12
 
 A1 = Pin(16, Pin.OUT)
 A2 = Pin(17, Pin.OUT)
+
+Forward_button = Pin(3, Pin.IN, Pin.PULL_UP)
+Backward_button = Pin(4, Pin.IN, Pin.PULL_UP)
 
 TARGET_TEMP = 25
 
@@ -37,6 +44,10 @@ def forward():
 def backward():
     A1.value(0)
     A2.value(1)
+
+def stop():
+    A1.value(0)
+    A2.value(0)
 
 def toggle_relay():
     FAN_RELAY.value(1)
@@ -107,17 +118,23 @@ last_response = {}
 
 while True:
 
-    forward()
-
-    response = urequests.get("http://localhost:8000/get-data")
+    #response = urequests.get("http://localhost:8000/get-data")
 
 
-    if last_response != response.text:
-        last_response = response.text
-        print(response.status_code)
-        print(response.text)
+#    if last_response != response.text:
+ #       last_response = response.text
+  #      print(response.status_code)
+   #     print(response.text)
 
-    response.close()
+#    response.close()
 
+    if Forward_button.value() == 0:
+        print("Forward")
+        forward()
+    elif Backward_button.value() == 0:
+        print("Backward")
+        backward()
+    else:
+        stop
 
     time.sleep(2)
